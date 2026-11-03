@@ -1,0 +1,83 @@
+name: Build & Auto-Update
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  schedule:
+    # Runs every 3 days at 00:00 UTC
+    - cron: '0 0 */3 * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  auto-update:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v23
+
+      - name: Set up Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v15
+
+      - name: Run update script
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          ./update.sh
+
+      - name: Check if versions.json changed
+        id: git_status
+        run: |
+          if git diff --quiet versions.json; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            NEW_VER=$(grep -m1 '"version":' versions.json | sed -E 's/.*"version": *"([^"]+)".*/\1/')
+            echo "new_version=$NEW_VER" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build and verify updated package
+        if: steps.git_status.outputs.changed == 'true'
+        run: |
+          nix flake check
+          nix build .#default
+
+      - name: Commit and push update
+        if: steps.git_status.outputs.changed == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add versions.json
+          git commit -m "chore(release): bump orca to v${{ steps.git_status.outputs.new_version }}"
+          git push origin main
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7.0.1
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v23
+
+      - name: Set up Magic Nix Cache
+        uses: DeterminateSystems/magic-nix-cache-action@v15
+
+      - name: Check Flake
+        run: nix flake check
+
+      - name: Build Orca Package
+        run: |
+          nix build .#default
+          test -x result/bin/orca-ide
+          echo "Build successful: $(readlink -f result/bin/orca-ide)"
