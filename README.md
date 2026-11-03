@@ -11,11 +11,10 @@ Supports **`x86_64-linux`** and **`aarch64-linux`** using `appimageTools.wrapTyp
 ### 1. Run Directly with Flakes
 ```bash
 # Launch desktop GUI directly
-nix run github:kdx/orca-bin
+nix run github:kmdtaufik/orca-bin
 
 # Or run the CLI orchestrator directly
-nix run github:kdx/orca-bin#cli -- --help
-
+nix run github:kmdtaufik/orca-bin#cli -- --help
 # From a local checkout:
 nix run .#        # Desktop GUI
 nix run .#cli     # CLI orchestrator
@@ -23,7 +22,7 @@ nix run .#cli     # CLI orchestrator
 
 ### 2. Build Locally
 ```bash
-git clone https://github.com/kdx/orca-bin.git
+git clone https://github.com/kmdtaufik/orca-bin.git
 cd orca-bin
 nix build .#
 
@@ -44,7 +43,7 @@ Add `orca-bin` to your flake inputs and import the module:
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    orca-bin.url = "github:kdx/orca-bin";
+    orca-bin.url = "github:kmdtaufik/orca-bin";
     orca-bin.inputs.nixpkgs.follows = "nixpkgs";
   };
 
