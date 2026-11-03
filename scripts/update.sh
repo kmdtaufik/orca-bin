@@ -1,10 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSIONS_FILE="${PWD}/versions.json"
+VERSIONS_FILE="${PWD}/pkgs/orca-ide/versions.json"
 if [[ ! -f "$VERSIONS_FILE" ]]; then
   SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  VERSIONS_FILE="$SCRIPT_DIR/versions.json"
+  REPO_ROOT="$(cd "$SCRIPT_DIR/.." 2>/dev/null && pwd)"
+  if [[ -f "${REPO_ROOT}/pkgs/orca-ide/versions.json" ]]; then
+    VERSIONS_FILE="${REPO_ROOT}/pkgs/orca-ide/versions.json"
+  fi
+fi
+
+if [[ ! -f "$VERSIONS_FILE" ]]; then
+  echo "Error: versions file not found at $VERSIONS_FILE" >&2
+  exit 1
 fi
 
 REPO="stablyai/orca"
@@ -46,18 +54,24 @@ if [[ "$LATEST_VERSION" == "$CURRENT_VERSION" && "$FORCE" != "true" ]]; then
   exit 0
 fi
 
-DOWNLOAD_URL="https://github.com/$REPO/releases/download/v${LATEST_VERSION}/orca-linux.AppImage"
-echo "==> Prefetching hash for $DOWNLOAD_URL..."
+URL_X86="https://github.com/$REPO/releases/download/v${LATEST_VERSION}/orca-linux.AppImage"
+URL_ARM="https://github.com/$REPO/releases/download/v${LATEST_VERSION}/orca-linux-arm64.AppImage"
 
-RAW_HASH=$(nix-prefetch-url "$DOWNLOAD_URL")
-SRI_HASH=$(nix-hash --to-sri --type sha256 "$RAW_HASH")
+echo "==> Prefetching x86_64-linux hash for $URL_X86..."
+RAW_HASH_X86=$(nix-prefetch-url "$URL_X86")
+SRI_HASH_X86=$(nix-hash --to-sri --type sha256 "$RAW_HASH_X86")
+echo "==> Computed x86_64 SRI hash: $SRI_HASH_X86"
 
-echo "==> Computed SRI hash: $SRI_HASH"
+echo "==> Prefetching aarch64-linux hash for $URL_ARM..."
+RAW_HASH_ARM=$(nix-prefetch-url "$URL_ARM")
+SRI_HASH_ARM=$(nix-hash --to-sri --type sha256 "$RAW_HASH_ARM")
+echo "==> Computed aarch64 SRI hash: $SRI_HASH_ARM"
 
 cat <<EOF > "$VERSIONS_FILE.tmp"
 {
   "version": "$LATEST_VERSION",
-  "hash": "$SRI_HASH"
+  "x86_64-linux": "$SRI_HASH_X86",
+  "aarch64-linux": "$SRI_HASH_ARM"
 }
 EOF
 
