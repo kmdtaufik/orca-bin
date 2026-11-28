@@ -1,5 +1,5 @@
 {
-  "version": "1.4.274",
-  "x86_64-linux": "sha256-THnB/cXz3UV5taQak1pZQD11HGAfKVzah4vAbma30mA=",
-  "aarch64-linux": "sha256-9O1i0TOxTrWrlrN96HPJLLf/9VniN9j2YeBNv3GJx6I="
+  "version": "1.4.280",
+  "x86_64-linux": "sha256-f6TZdb3RUXh7sSU3kIRk+HaV7MPxwmz1UyIO6G08BsI=",
+  "aarch64-linux": "sha256-NNsHbb9RyJ8Bpz2572oXxCu5kSTpXeGX71efLN2fquY="
 }
